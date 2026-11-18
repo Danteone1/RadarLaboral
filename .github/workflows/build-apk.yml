@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HAS_RELEASE_SIGNING: ${{ secrets.KEYSTORE_BASE64 != '' && secrets.KEYSTORE_PASSWORD != '' && secrets.KEY_ALIAS != '' && secrets.KEY_PASSWORD != '' }}
-      RELEASE_STORE_FILE: ${{ runner.temp }}/radar-laboral-release.jks
       RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
@@ -56,6 +55,7 @@ jobs:
         shell: bash
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          RELEASE_STORE_FILE: ${{ runner.temp }}/radar-laboral-release.jks
         run: |
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RELEASE_STORE_FILE"
           chmod 600 "$RELEASE_STORE_FILE"
@@ -64,7 +64,7 @@ jobs:
         if: env.HAS_RELEASE_SIGNING == 'true'
         uses: gradle/gradle-build-action@v3
         env:
-          RELEASE_STORE_FILE: ${{ env.RELEASE_STORE_FILE }}
+          RELEASE_STORE_FILE: ${{ runner.temp }}/radar-laboral-release.jks
           RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
