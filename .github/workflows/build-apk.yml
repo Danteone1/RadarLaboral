@@ -1,4 +1,5 @@
 name: Build Radar Laboral APK
+
 on:
   workflow_dispatch:
   push:
@@ -7,6 +8,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      HAS_RELEASE_SIGNING: ${{ secrets.KEYSTORE_BASE64 != '' && secrets.KEYSTORE_PASSWORD != '' && secrets.KEY_ALIAS != '' && secrets.KEY_PASSWORD != '' }}
+      RELEASE_STORE_FILE: ${{ runner.temp }}/radar-laboral-release.jks
+      RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,9 +25,6 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # GitHub-hosted Ubuntu runners already include Android SDK command-line tools.
-      # Avoid android-actions/setup-android here: its default package list requests
-      # the obsolete SDK package "tools", which caused the previous run to fail.
       - name: Install Android SDK components
         shell: bash
         run: |
@@ -38,10 +43,44 @@ jobs:
           gradle-version: "8.9"
           arguments: --no-daemon :app:assembleDebug
 
-      - name: Publish APK
+      - name: Publish debug APK
         uses: actions/upload-artifact@v4
         with:
           name: RadarLaboral-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Restore private release keystore
+        if: env.HAS_RELEASE_SIGNING == 'true'
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RELEASE_STORE_FILE"
+          chmod 600 "$RELEASE_STORE_FILE"
+
+      - name: Build signed release APK
+        if: env.HAS_RELEASE_SIGNING == 'true'
+        uses: gradle/gradle-build-action@v3
+        env:
+          RELEASE_STORE_FILE: ${{ env.RELEASE_STORE_FILE }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        with:
+          gradle-version: "8.9"
+          arguments: --no-daemon :app:assembleRelease
+
+      - name: Publish signed release APK
+        if: env.HAS_RELEASE_SIGNING == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: RadarLaboral-release-signed-apk
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Explain unsigned status
+        if: env.HAS_RELEASE_SIGNING != 'true'
+        run: echo "Release APK not generated: configure the four signing secrets in GitHub repository settings."
