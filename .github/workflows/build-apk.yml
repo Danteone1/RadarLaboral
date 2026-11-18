@@ -8,12 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      HAS_RELEASE_SIGNING: ${{ secrets.KEYSTORE_BASE64 != '' && secrets.KEYSTORE_PASSWORD != '' && secrets.KEY_ALIAS != '' && secrets.KEY_PASSWORD != '' }}
-      RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-      RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-      RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,12 +21,9 @@ jobs:
       - name: Install Android SDK components
         shell: bash
         run: |
-          echo "ANDROID_HOME=${ANDROID_HOME}"
+          set -e
           SDKMANAGER="$(find "${ANDROID_HOME}" -path '*/bin/sdkmanager' -type f | head -n 1)"
-          if [ -z "$SDKMANAGER" ]; then
-            echo "sdkmanager was not found under ANDROID_HOME=${ANDROID_HOME}"
-            exit 1
-          fi
+          test -n "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
@@ -64,14 +55,6 @@ jobs:
             unzip -t "$APK" | tail -n 2
           } 2>&1 | tee diagnostics/apk-diagnostic.txt
 
-      - name: Publish APK diagnostics
-        uses: actions/upload-artifact@v4
-        with:
-          name: RadarLaboral-apk-diagnostics
-          path: diagnostics/apk-diagnostic.txt
-          if-no-files-found: error
-          retention-days: 14
-
       - name: Publish debug APK
         uses: actions/upload-artifact@v4
         with:
@@ -80,37 +63,10 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Restore private release keystore
-        if: env.HAS_RELEASE_SIGNING == 'true'
-        shell: bash
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          RELEASE_STORE_FILE: ${{ runner.temp }}/radar-laboral-release.jks
-        run: |
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RELEASE_STORE_FILE"
-          chmod 600 "$RELEASE_STORE_FILE"
-
-      - name: Build signed release APK
-        if: env.HAS_RELEASE_SIGNING == 'true'
-        uses: gradle/gradle-build-action@v3
-        env:
-          RELEASE_STORE_FILE: ${{ runner.temp }}/radar-laboral-release.jks
-          RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        with:
-          gradle-version: "8.9"
-          arguments: --no-daemon :app:assembleRelease
-
-      - name: Publish signed release APK
-        if: env.HAS_RELEASE_SIGNING == 'true'
+      - name: Publish APK diagnostics
         uses: actions/upload-artifact@v4
         with:
-          name: RadarLaboral-release-signed-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: RadarLaboral-apk-diagnostics
+          path: diagnostics/apk-diagnostic.txt
           if-no-files-found: error
           retention-days: 14
-
-      - name: Explain unsigned status
-        if: env.HAS_RELEASE_SIGNING != 'true'
-        run: echo "Release APK not generated: configure the four signing secrets in GitHub repository settings."
