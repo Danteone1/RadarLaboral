@@ -21,17 +21,33 @@ class MainActivity : ComponentActivity() {
                 var entries by remember { mutableStateOf(WhatsAppCaptureService.history.toList()) }
                 Column(Modifier.fillMaxSize().padding(16.dp)) {
                     Text("RADAR LABORAL", style = MaterialTheme.typography.headlineMedium)
-                    Text("Captura de notificaciones disponibles de WhatsApp")
+                    Text("Captura de notificaciones: WhatsApp, Telegram y correo compatible")
                     Spacer(Modifier.height(12.dp))
-                    Button(onClick = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
-                        modifier = Modifier.fillMaxWidth()) { Text("Activar acceso a notificaciones") }
-                    OutlinedButton(onClick = { entries = WhatsAppCaptureService.history.toList() },
-                        modifier = Modifier.fillMaxWidth()) { Text("Actualizar historial") }
+                    Button(
+                        onClick = {
+                            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Activar acceso a notificaciones")
+                    }
+                    OutlinedButton(
+                        onClick = { entries = WhatsAppCaptureService.history.toList() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Actualizar historial")
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text("Avisos capturados: ${entries.size}")
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(entries.reversed()) { item ->
                             Card(Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(12.dp)) {
-                                    Text("${item.priority} · ${item.sender}", style = MaterialTheme.typography.titleSmall)
+                                    Text(
+                                        "${item.priority} · ${item.source}",
+                                        style = MaterialTheme.typography.titleSmall
+                                    )
+                                    Text(item.sender, style = MaterialTheme.typography.bodyMedium)
                                     Text(item.body)
                                     Text(item.time, style = MaterialTheme.typography.labelSmall)
                                 }
