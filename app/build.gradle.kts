@@ -20,8 +20,19 @@ android {
         applicationId = "mx.radar.laboral"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
+    }
+
+    // Diagnostic build: separate package to avoid signature/update conflicts.
+    buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".diagnostic"
+            versionNameSuffix = "-diagnostic"
+        }
+        getByName("release") {
+            isMinifyEnabled = false
+        }
     }
 
     signingConfigs {
@@ -31,15 +42,6 @@ android {
                 storePassword = releaseStorePassword
                 keyAlias = releaseKeyAlias
                 keyPassword = releaseKeyPassword
-            }
-        }
-    }
-
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-            if (hasReleaseSigning) {
-                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
