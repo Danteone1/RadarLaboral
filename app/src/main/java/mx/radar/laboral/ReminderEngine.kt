@@ -88,7 +88,7 @@ object ReminderEngine {
         val lower = normalized.lowercase(Locale.ROOT)
         if (lower.contains("mañana") || lower.contains("manana")) cal.add(Calendar.DAY_OF_YEAR, 1)
         if (cal.timeInMillis <= now && !lower.contains("mañana") && !lower.contains("manana")) cal.add(Calendar.DAY_OF_YEAR, 1)
-        val task = normalized.substring(timeMatch.range.last + 1).trim().trimStart(',', ':', ' ', 'que')
+        val task = normalized.substring(timeMatch.range.last + 1).trim().trimStart(',', ':', ' ')
             .replace(Regex("^(debo|tengo que)\\s+", RegexOption.IGNORE_CASE), "")
             .ifBlank { normalized.substringAfter(timeMatch.value).trim() }
         if (task.isBlank()) return null
