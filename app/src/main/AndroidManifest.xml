@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:label="Radar Laboral"
@@ -19,5 +20,8 @@
                 <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
         </service>
+        <receiver
+            android:name=".ReminderAlarmReceiver"
+            android:exported="false"/>
     </application>
 </manifest>
