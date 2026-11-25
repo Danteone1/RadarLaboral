@@ -131,7 +131,7 @@ object ReminderEngine {
             var hour = clock.groupValues[1].toIntOrNull() ?: return null
             val minute = clock.groupValues[2].takeIf { it.isNotBlank() }?.toIntOrNull() ?: 0
             if (hour !in 0..23 || minute !in 0..59) return null
-            val suffix = clock.groupValues.getOrElse(3) { "" }.lowercase(Locale("es", "MX")).replace(Regex("\\\\s+"), "").replace(".", "").trim()
+            val suffix = clock.groupValues.getOrElse(3) { "" }.lowercase(Locale("es", "MX")).replace(Regex("\\s+"), "").replace(".", "").trim()
             when {
                 suffix == "pm" || suffix.contains("tarde") || suffix.contains("noche") -> if (hour in 1..11) hour += 12
                 suffix == "am" || suffix.contains("mañana") -> if (hour == 12) hour = 0
