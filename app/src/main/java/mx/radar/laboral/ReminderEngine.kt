@@ -125,13 +125,13 @@ object ReminderEngine {
             timeStart = match.range.first
             timeEnd = match.range.last + 1
         } else {
-            val clock = Regex("(?i)\\b(?:a las|a la)\\s*(\\d{1,2})(?::(\\d{1,2}))?\\s*(a\\.?m\\.?|p\\.?m\\.?|de la mañana|de la tarde|de la noche)?\\b").find(raw)
-                ?: Regex("(?i)\\b(\\d{1,2}):(\\d{2})\\s*(a\\.?m\\.?|p\\.?m\\.?)?\\b").find(raw)
+            val clock = Regex("(?i)\\b(?:a las|a la)\\s*(\\d{1,2})(?::(\\d{1,2}))?\\s*(a\\.?\\s*m\\.?|p\\.?\\s*m\\.?|de la mañana|de la tarde|de la noche)?\\b").find(raw)
+                ?: Regex("(?i)\\b(\\d{1,2}):(\\d{2})\\s*(a\\.?\\s*m\\.?|p\\.?\\s*m\\.?)?\\b").find(raw)
                 ?: return null
             var hour = clock.groupValues[1].toIntOrNull() ?: return null
             val minute = clock.groupValues[2].takeIf { it.isNotBlank() }?.toIntOrNull() ?: 0
             if (hour !in 0..23 || minute !in 0..59) return null
-            val suffix = clock.groupValues.getOrElse(3) { "" }.lowercase(Locale("es", "MX")).replace(".", "").trim()
+            val suffix = clock.groupValues.getOrElse(3) { "" }.lowercase(Locale("es", "MX")).replace(Regex("\\\\s+"), "").replace(".", "").trim()
             when {
                 suffix == "pm" || suffix.contains("tarde") || suffix.contains("noche") -> if (hour in 1..11) hour += 12
                 suffix == "am" || suffix.contains("mañana") -> if (hour == 12) hour = 0
