@@ -32,8 +32,15 @@ class WhatsAppCaptureService : NotificationListenerService() {
 
         // Los comandos explícitos se convierten en recordatorios dentro de la agenda común.
         val command = ReminderEngine.parse(body)
-        if (command != null) {
-            ReminderEngine.add(applicationContext, command.task, command.at, command.priority)
+        val addressedToUser = ReminderEngine.isAddressedToUser(applicationContext, sender, body)
+        if (command != null && addressedToUser) {
+            val alreadyExists = ReminderEngine.all(applicationContext).any {
+                !it.done && it.text.equals(command.task, ignoreCase = true) &&
+                    kotlin.math.abs(it.triggerAt - command.at) < 60_000L
+            }
+            if (!alreadyExists) {
+                ReminderEngine.add(applicationContext, command.task, command.at, command.priority)
+            }
         }
 
         val priority = classify("$sender $body")
